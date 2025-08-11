@@ -85,4 +85,4 @@ class Tag(Node):
         return ''.join(texts)
 
     def __repr__(self) -> str:
-        return f"<{self.name} {self.attrs}> {self.text}</{self.name}>"
+        return f"<{self.name} {self.attrs}>"

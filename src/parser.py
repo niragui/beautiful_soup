@@ -3,10 +3,13 @@ from typing import List, Tuple
 from html.parser import HTMLParser
 from typing import Optional
 
-from .constants import VOID_TAGS
+from .constants import VOID_TAGS, NON_NESTABLE_TAGS
 
 from .elements.tag import Tag
 from .elements.text import Text
+
+from .fix_html import unescape_html
+
 
 
 class MySoupParser(HTMLParser):
@@ -33,6 +36,11 @@ class MySoupParser(HTMLParser):
         """
         attr_dict = {k: v if v is not None else "" for k, v in attrs}
         new_tag = Tag(tag, attr_dict)
+
+        if tag in NON_NESTABLE_TAGS:
+            while len(self.stack) > 1 and self.stack[-1].name in NON_NESTABLE_TAGS:
+                self.stack.pop()
+
         self.stack[-1].append(new_tag)
 
         if tag.lower() not in VOID_TAGS:
@@ -45,7 +53,7 @@ class MySoupParser(HTMLParser):
         Parameters:
             - tag: tag name to close (str), no default
         """
-        if len(self.stack) > 1:
+        if len(self.stack) > 1 and self.stack[-1].name == tag:
             self.stack.pop()
 
     def handle_data(self, data: str) -> None:
@@ -70,6 +78,8 @@ def MySoup(html: str) -> Tag:
     Returns:
         - Root tag of the parsed tree (Tag)
     """
+    html = unescape_html(html)
+
     parser = MySoupParser()
     parser.feed(html)
     return parser.root
