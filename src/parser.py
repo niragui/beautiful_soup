@@ -21,7 +21,9 @@ class MySoupParser(HTMLParser):
     def __init__(self) -> None:
         super().__init__()
         self.stack: list[Tag] = []
-        self.root: Tag = Tag("html")
+        self.items = 0
+        self.root: Tag = Tag("html", {}, self.items)
+        self.items += 1
         self.stack.append(self.root)
 
     def handle_starttag(self,
@@ -35,10 +37,11 @@ class MySoupParser(HTMLParser):
             - attrs: list of (attribute, value) tuples, value may be None
         """
         attr_dict = {k: v if v is not None else "" for k, v in attrs}
-        new_tag = Tag(tag, attr_dict)
+        new_tag = Tag(tag, attr_dict, self.items)
+        self.items += 1
 
         if tag in NON_NESTABLE_TAGS:
-            while len(self.stack) > 1 and self.stack[-1].name in NON_NESTABLE_TAGS:
+            while len(self.stack) > 1 and self.stack[-1].name == tag:
                 self.stack.pop()
 
         self.stack[-1].append(new_tag)
@@ -46,15 +49,22 @@ class MySoupParser(HTMLParser):
         if tag.lower() not in VOID_TAGS:
             self.stack.append(new_tag)
 
-    def handle_endtag(self, tag: str) -> None:
+    def handle_endtag(self,
+                      tag: str) -> None:
         """
         Handles a closing tag and pops the current tag from the stack.
 
         Parameters:
             - tag: tag name to close (str), no default
         """
-        if len(self.stack) > 1 and self.stack[-1].name == tag:
-            self.stack.pop()
+        closed_pos = 1
+        while closed_pos < len(self.stack) and self.stack[closed_pos * -1].name != tag:
+            closed_pos += 1
+
+        if closed_pos >= len(self.stack):
+            return
+
+        self.stack = self.stack[:closed_pos * -1]
 
     def handle_data(self, data: str) -> None:
         """

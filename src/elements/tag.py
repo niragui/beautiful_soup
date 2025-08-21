@@ -1,5 +1,7 @@
 from typing import Optional, Dict
 
+from ..constants import SCRIPT_TAG
+
 from .node import Node
 from .text import Text
 from .filter import NodeFilter
@@ -15,11 +17,13 @@ class Tag(Node):
     """
     def __init__(self,
                  name: str,
-                 attrs: Optional[Dict[str, str]] = None):
+                 attrs: Optional[Dict[str, str]] = None,
+                 position: int = 0):
         super().__init__()
         self.name = name
         self.attrs = attrs if attrs else {}
         self.children = []
+        self.position = position
 
     def append(self,
                node: Node) -> None:
@@ -77,12 +81,35 @@ class Tag(Node):
             - Text content (str)
         """
         texts = []
+
         for child in self.children:
             if isinstance(child, Text):
                 texts.append(child.content)
             elif isinstance(child, Tag):
-                texts.append(child.text)
+                if child.name != SCRIPT_TAG:
+                    texts.append(child.text)
+
         return ''.join(texts)
 
     def __repr__(self) -> str:
         return f"<{self.name} {self.attrs}>"
+
+    def __eq__(self,
+               other: "Tag"):
+        return self.position == other.position
+
+    def __lte__(self,
+                other: "Tag"):
+        return self.position <= other.position
+
+    def __lt__(self,
+               other: "Tag"):
+        return self.position < other.position
+
+    def __gte__(self,
+                other: "Tag"):
+        return self.position >= other.position
+
+    def __gt__(self,
+               other: "Tag"):
+        return self.position > other.position
