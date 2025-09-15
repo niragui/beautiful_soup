@@ -72,8 +72,8 @@ class Tag(Node):
 
         return results
 
-    @property
-    def text(self) -> str:
+    def _text(self,
+              scripts: bool = False):
         """
         Extracts all text content from the tag and its descendants.
 
@@ -86,10 +86,21 @@ class Tag(Node):
             if isinstance(child, Text):
                 texts.append(child.content)
             elif isinstance(child, Tag):
-                if child.name != SCRIPT_TAG:
+                if child.name != SCRIPT_TAG or scripts:
                     texts.append(child.text)
 
         return ''.join(texts)
+
+
+    @property
+    def text(self) -> str:
+        """
+        Extracts all text content from the tag and its descendants.
+
+        Returns:
+            - Text content (str)
+        """
+        return self._text(False)
 
     def __repr__(self) -> str:
         return f"<{self.name} {self.attrs}>"
